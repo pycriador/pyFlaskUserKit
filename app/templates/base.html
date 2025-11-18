@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}pyFlaskUserKit{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body data-theme="light">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-person-circle"></i> pyFlaskUserKit
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house-door"></i> Início
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/usuarios">
+                            <i class="bi bi-people"></i> Usuários
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/grupos">
+                            <i class="bi bi-collection"></i> Grupos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/documentacao">
+                            <i class="bi bi-book"></i> Documentação
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- User Info and Theme Toggle -->
+                <div class="d-flex align-items-center">
+                    <div class="text-light me-3">
+                        <i class="bi bi-person-circle"></i> 
+                        <span class="d-none d-md-inline">{{ session.username }}</span>
+                        {% if session.is_admin %}
+                        <span class="badge bg-warning text-dark ms-1">Admin</span>
+                        {% endif %}
+                    </div>
+                    <button id="themeToggle" class="btn btn-outline-light me-2" title="Alternar Tema">
+                        <i class="bi bi-moon-fill" id="themeIcon"></i>
+                    </button>
+                    <a href="/logout" class="btn btn-outline-light" title="Sair">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Alert Messages -->
+    <div id="alertContainer" class="container mt-3">
+        <!-- Dynamic alerts will be inserted here -->
+    </div>
+    
+    <!-- Main Content -->
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="mt-5 py-3 bg-light text-center">
+        <div class="container">
+            <p class="text-muted mb-0">pyFlaskUserKit &copy; 2025 - Sistema de Gerenciamento de Usuários</p>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+
+

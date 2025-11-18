@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Grupo #{{ group.id }} - pyFlaskUserKit{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('web.index') }}">Início</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('web.groups_list') }}">Grupos</a></li>
+                <li class="breadcrumb-item active">{{ group.name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-collection-fill"></i> {{ group.name }}</h2>
+            {% if session.is_admin %}
+            <div>
+                <a href="{{ url_for('web.group_edit', group_id=group.id) }}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <form method="POST" action="{{ url_for('web.group_delete', group_id=group.id) }}" 
+                      style="display: inline;" 
+                      onsubmit="return confirm('Tem certeza que deseja deletar este grupo?');">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Deletar
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="row">
+            <!-- Group Info Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações do Grupo</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="30%">ID:</th>
+                                <td><code>{{ group.id }}</code></td>
+                            </tr>
+                            <tr>
+                                <th>Nome:</th>
+                                <td><strong>{{ group.name }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Descrição:</th>
+                                <td>{{ group.description or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total de membros:</th>
+                                <td><span class="badge bg-info">{{ group.users|length }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>Criado em:</th>
+                                <td>{{ group.created_at.strftime('%d/%m/%Y %H:%M') if group.created_at else 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Atualizado em:</th>
+                                <td>{{ group.updated_at.strftime('%d/%m/%Y %H:%M') if group.updated_at else 'N/A' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Members Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-people"></i> Membros do Grupo</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if group.users %}
+                        <ul class="list-group list-group-flush">
+                            {% for user in group.users %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ user.username }}</strong>
+                                    {% if user.is_admin %}
+                                    <span class="badge bg-primary ms-1">Admin</span>
+                                    {% endif %}
+                                    {% if not user.is_active %}
+                                    <span class="badge bg-danger ms-1">Inativo</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if session.is_admin %}
+                                    <a href="{{ url_for('web.user_detail', user_id=user.id) }}" 
+                                       class="btn btn-sm btn-outline-info me-1">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form method="POST" 
+                                          action="{{ url_for('web.group_remove_user', group_id=group.id, user_id=user.id) }}"
+                                          style="display: inline;"
+                                          onsubmit="return confirm('Remover {{ user.username }} do grupo?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-person-dash"></i>
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted">{{ user.email }}</span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted">Este grupo não possui membros.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add User Card - Admin Only -->
+        {% if session.is_admin and all_users %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-plus"></i> Adicionar Usuário ao Grupo</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('web.group_add_user', group_id=group.id, user_id=0) }}" 
+                              onsubmit="this.action = this.action.replace('/0', '/' + document.getElementById('user_select').value); return document.getElementById('user_select').value != '';">
+                            <div class="row">
+                                <div class="col-md-10">
+                                    <select class="form-select" id="user_select" name="user_id" required>
+                                        <option value="">Selecione um usuário...</option>
+                                        {% for user in all_users %}
+                                        {% if user not in group.users %}
+                                        <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bi bi-plus-circle"></i> Adicionar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+

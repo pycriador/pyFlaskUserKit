@@ -1,0 +1,647 @@
+{% extends "base.html" %}
+
+{% block title %}Documentação - pyFlaskUserKit{% endblock %}
+
+{% block extra_css %}
+<style>
+    .code-tabs {
+        margin-top: 1rem;
+    }
+    .code-tabs .nav-link {
+        color: #495057;
+        border: 1px solid #dee2e6;
+        border-bottom: none;
+    }
+    .code-tabs .nav-link.active {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    .tab-content {
+        border: 1px solid #dee2e6;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0 0.25rem 0.25rem 0.25rem;
+    }
+    pre {
+        background-color: #2d2d2d;
+        color: #f8f8f2;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        overflow-x: auto;
+    }
+    code {
+        color: #e83e8c;
+    }
+    .endpoint-badge {
+        display: inline-block;
+        min-width: 70px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="bi bi-book-fill"></i> Documentação da API REST</h2>
+        
+        <!-- Introduction -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Introdução</h5>
+            </div>
+            <div class="card-body">
+                <p>A API REST do pyFlaskUserKit fornece endpoints completos para gerenciamento de usuários e grupos.</p>
+                <ul>
+                    <li><strong>Base URL:</strong> <code>http://localhost:5000/api</code></li>
+                    <li><strong>Formato:</strong> JSON</li>
+                    <li><strong>Autenticação:</strong> Sessão (login obrigatório)</li>
+                    <li><strong>Autorização:</strong> Apenas administradores podem acessar a API</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Authentication -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Autenticação</h5>
+            </div>
+            <div class="card-body">
+                <h6>Como Autenticar</h6>
+                <p>Para usar a API, você precisa primeiro fazer login através da interface web ou enviar uma requisição POST para <code>/login</code>.</p>
+                
+                <ul class="nav nav-tabs code-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#auth-curl">cURL</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#auth-python">Python</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#auth-php">PHP</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#auth-nodejs">Node.js</a>
+                    </li>
+                </ul>
+                
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="auth-curl">
+                        <pre><code># Fazer login e salvar cookies
+curl -X POST http://localhost:5000/login \
+  -d "username=admin&password=admin123" \
+  -c cookies.txt
+
+# Usar cookies nas requisições subsequentes
+curl http://localhost:5000/api/users \
+  -b cookies.txt</code></pre>
+                    </div>
+                    <div class="tab-pane fade" id="auth-python">
+                        <pre><code>import requests
+
+# Criar sessão para manter cookies
+session = requests.Session()
+
+# Fazer login
+login_data = {
+    'username': 'admin',
+    'password': 'admin123'
+}
+response = session.post('http://localhost:5000/login', data=login_data)
+
+# Agora pode fazer requisições autenticadas
+users = session.get('http://localhost:5000/api/users')
+print(users.json())</code></pre>
+                    </div>
+                    <div class="tab-pane fade" id="auth-php">
+                        <pre><code>&lt;?php
+// Inicializar cURL com gerenciamento de cookies
+$cookieFile = tempnam(sys_get_temp_dir(), 'cookie');
+
+// Fazer login
+$ch = curl_init('http://localhost:5000/login');
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, [
+    'username' => 'admin',
+    'password' => 'admin123'
+]);
+curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_exec($ch);
+curl_close($ch);
+
+// Fazer requisições autenticadas
+$ch = curl_init('http://localhost:5000/api/users');
+curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+$users = json_decode($response, true);
+print_r($users);
+?&gt;</code></pre>
+                    </div>
+                    <div class="tab-pane fade" id="auth-nodejs">
+                        <pre><code>const axios = require('axios');
+const wrapper = require('axios-cookiejar-support').wrapper;
+const tough = require('tough-cookie');
+
+// Criar cliente com suporte a cookies
+const cookieJar = new tough.CookieJar();
+const client = wrapper(axios.create({ jar: cookieJar }));
+
+// Fazer login
+await client.post('http://localhost:5000/login', 
+  'username=admin&password=admin123',
+  {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  }
+);
+
+// Fazer requisições autenticadas
+const response = await client.get('http://localhost:5000/api/users');
+console.log(response.data);</code></pre>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle"></i> <strong>Importante:</strong> 
+                    Apenas usuários administradores podem acessar os endpoints da API.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Users API -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Endpoints de Usuários</h5>
+            </div>
+            <div class="card-body">
+                
+                <!-- List Users -->
+                <div class="mb-5">
+                    <h5>
+                        <span class="badge bg-info endpoint-badge">GET</span> 
+                        /api/users
+                    </h5>
+                    <p>Listar todos os usuários</p>
+                    
+                    <ul class="nav nav-tabs code-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#list-users-curl">cURL</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#list-users-python">Python</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#list-users-php">PHP</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#list-users-nodejs">Node.js</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="list-users-curl">
+                            <pre><code>curl http://localhost:5000/api/users \
+  -b cookies.txt</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="list-users-python">
+                            <pre><code>response = session.get('http://localhost:5000/api/users')
+users = response.json()
+
+for user in users:
+    print(f"ID: {user['id']}, Username: {user['username']}")</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="list-users-php">
+                            <pre><code>$ch = curl_init('http://localhost:5000/api/users');
+curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+$users = json_decode($response, true);
+foreach ($users as $user) {
+    echo "ID: {$user['id']}, Username: {$user['username']}\n";
+}</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="list-users-nodejs">
+                            <pre><code>const response = await client.get('http://localhost:5000/api/users');
+const users = response.data;
+
+users.forEach(user => {
+    console.log(`ID: ${user.id}, Username: ${user.username}`);
+});</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <strong>Resposta de Sucesso (200):</strong>
+                        <pre><code>[
+  {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@example.com",
+    "is_admin": true,
+    "is_active": true,
+    "groups": [{"id": 1, "name": "Administradores"}],
+    "created_at": "2025-11-18T10:30:00",
+    "updated_at": "2025-11-18T10:30:00"
+  }
+]</code></pre>
+                    </div>
+                </div>
+                
+                <!-- Get User by ID -->
+                <div class="mb-5">
+                    <h5>
+                        <span class="badge bg-info endpoint-badge">GET</span> 
+                        /api/users/{user_id}
+                    </h5>
+                    <p>Obter um usuário específico por ID</p>
+                    
+                    <ul class="nav nav-tabs code-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#get-user-curl">cURL</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#get-user-python">Python</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#get-user-php">PHP</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#get-user-nodejs">Node.js</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="get-user-curl">
+                            <pre><code>curl http://localhost:5000/api/users/1 \
+  -b cookies.txt</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="get-user-python">
+                            <pre><code>user_id = 1
+response = session.get(f'http://localhost:5000/api/users/{user_id}')
+user = response.json()
+print(user)</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="get-user-php">
+                            <pre><code>$userId = 1;
+$ch = curl_init("http://localhost:5000/api/users/{$userId}");
+curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+$user = json_decode($response, true);
+print_r($user);</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="get-user-nodejs">
+                            <pre><code>const userId = 1;
+const response = await client.get(`http://localhost:5000/api/users/${userId}`);
+console.log(response.data);</code></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Create User -->
+                <div class="mb-5">
+                    <h5>
+                        <span class="badge bg-success endpoint-badge">POST</span> 
+                        /api/users
+                    </h5>
+                    <p>Criar novo usuário</p>
+                    
+                    <ul class="nav nav-tabs code-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#create-user-curl">cURL</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#create-user-python">Python</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#create-user-php">PHP</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#create-user-nodejs">Node.js</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="create-user-curl">
+                            <pre><code>curl -X POST http://localhost:5000/api/users \
+  -b cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "joao",
+    "email": "joao@example.com",
+    "password": "senha123",
+    "is_admin": false,
+    "is_active": true,
+    "group_ids": [1, 2]
+  }'</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="create-user-python">
+                            <pre><code>new_user = {
+    "username": "joao",
+    "email": "joao@example.com",
+    "password": "senha123",
+    "is_admin": False,
+    "is_active": True,
+    "group_ids": [1, 2]
+}
+
+response = session.post('http://localhost:5000/api/users', json=new_user)
+
+if response.status_code == 201:
+    user = response.json()
+    print(f"Usuário criado: {user['username']}")
+else:
+    print(f"Erro: {response.json()}")</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="create-user-php">
+                            <pre><code>$newUser = [
+    'username' => 'joao',
+    'email' => 'joao@example.com',
+    'password' => 'senha123',
+    'is_admin' => false,
+    'is_active' => true,
+    'group_ids' => [1, 2]
+];
+
+$ch = curl_init('http://localhost:5000/api/users');
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($newUser));
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+$user = json_decode($response, true);
+print_r($user);</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="create-user-nodejs">
+                            <pre><code>const newUser = {
+    username: 'joao',
+    email: 'joao@example.com',
+    password: 'senha123',
+    is_admin: false,
+    is_active: true,
+    group_ids: [1, 2]
+};
+
+try {
+    const response = await client.post('http://localhost:5000/api/users', newUser);
+    console.log('Usuário criado:', response.data);
+} catch (error) {
+    console.error('Erro:', error.response.data);
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <strong>Parâmetros (JSON Body):</strong>
+                        <table class="table table-sm">
+                            <tr><th>username</th><td>string (obrigatório)</td><td>Nome de usuário único</td></tr>
+                            <tr><th>email</th><td>string (obrigatório)</td><td>Email único</td></tr>
+                            <tr><th>password</th><td>string (obrigatório)</td><td>Senha do usuário</td></tr>
+                            <tr><th>is_admin</th><td>boolean (opcional)</td><td>Se é administrador (padrão: false)</td></tr>
+                            <tr><th>is_active</th><td>boolean (opcional)</td><td>Se está ativo (padrão: true)</td></tr>
+                            <tr><th>group_ids</th><td>array (opcional)</td><td>IDs dos grupos</td></tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Update User -->
+                <div class="mb-5">
+                    <h5>
+                        <span class="badge bg-warning endpoint-badge">PUT</span> 
+                        /api/users/{user_id}
+                    </h5>
+                    <p>Atualizar usuário existente</p>
+                    
+                    <ul class="nav nav-tabs code-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#update-user-curl">cURL</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#update-user-python">Python</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#update-user-php">PHP</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#update-user-nodejs">Node.js</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="update-user-curl">
+                            <pre><code>curl -X PUT http://localhost:5000/api/users/1 \
+  -b cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin_atualizado",
+    "email": "admin@example.com",
+    "is_admin": true
+  }'</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="update-user-python">
+                            <pre><code>user_id = 1
+updates = {
+    "username": "admin_atualizado",
+    "email": "admin@example.com",
+    "is_admin": True
+}
+
+response = session.put(f'http://localhost:5000/api/users/{user_id}', json=updates)
+print(response.json())</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="update-user-php">
+                            <pre><code>$userId = 1;
+$updates = [
+    'username' => 'admin_atualizado',
+    'email' => 'admin@example.com',
+    'is_admin' => true
+];
+
+$ch = curl_init("http://localhost:5000/api/users/{$userId}");
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($updates));
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+print_r(json_decode($response, true));</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="update-user-nodejs">
+                            <pre><code>const userId = 1;
+const updates = {
+    username: 'admin_atualizado',
+    email: 'admin@example.com',
+    is_admin: true
+};
+
+const response = await client.put(`http://localhost:5000/api/users/${userId}`, updates);
+console.log(response.data);</code></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Delete User -->
+                <div class="mb-5">
+                    <h5>
+                        <span class="badge bg-danger endpoint-badge">DELETE</span> 
+                        /api/users/{user_id}
+                    </h5>
+                    <p>Deletar usuário</p>
+                    
+                    <ul class="nav nav-tabs code-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#delete-user-curl">cURL</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#delete-user-python">Python</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#delete-user-php">PHP</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#delete-user-nodejs">Node.js</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="delete-user-curl">
+                            <pre><code>curl -X DELETE http://localhost:5000/api/users/2 \
+  -b cookies.txt</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="delete-user-python">
+                            <pre><code>user_id = 2
+response = session.delete(f'http://localhost:5000/api/users/{user_id}')
+
+if response.status_code == 200:
+    print("Usuário deletado com sucesso")
+else:
+    print(f"Erro: {response.json()}")</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="delete-user-php">
+                            <pre><code>$userId = 2;
+$ch = curl_init("http://localhost:5000/api/users/{$userId}");
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+print_r(json_decode($response, true));</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="delete-user-nodejs">
+                            <pre><code>const userId = 2;
+const response = await client.delete(`http://localhost:5000/api/users/${userId}`);
+console.log(response.data);</code></pre>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- Error Codes -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Códigos de Resposta HTTP</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Descrição</th>
+                            <th>Quando Ocorre</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge bg-success">200</span></td>
+                            <td>OK</td>
+                            <td>Requisição bem-sucedida (GET, PUT, DELETE)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-success">201</span></td>
+                            <td>Created</td>
+                            <td>Recurso criado com sucesso (POST)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">400</span></td>
+                            <td>Bad Request</td>
+                            <td>Dados inválidos ou faltantes</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">401</span></td>
+                            <td>Unauthorized</td>
+                            <td>Não autenticado (sem login)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">403</span></td>
+                            <td>Forbidden</td>
+                            <td>Sem permissões de administrador</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">404</span></td>
+                            <td>Not Found</td>
+                            <td>Recurso não encontrado</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">409</span></td>
+                            <td>Conflict</td>
+                            <td>Username ou email já existe</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">500</span></td>
+                            <td>Internal Server Error</td>
+                            <td>Erro interno do servidor</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Best Practices -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Boas Práticas</h5>
+            </div>
+            <div class="card-body">
+                <h6>Segurança</h6>
+                <ul>
+                    <li>Sempre use HTTPS em produção</li>
+                    <li>Mantenha as credenciais seguras</li>
+                    <li>Use sessões com SECRET_KEY forte</li>
+                    <li>Implemente rate limiting para prevenir abuso</li>
+                </ul>
+                
+                <h6 class="mt-3">Performance</h6>
+                <ul>
+                    <li>Reutilize sessões HTTP para múltiplas requisições</li>
+                    <li>Implemente cache quando apropriado</li>
+                    <li>Use paginação para listas grandes</li>
+                </ul>
+                
+                <h6 class="mt-3">Tratamento de Erros</h6>
+                <ul>
+                    <li>Sempre verifique o código de status HTTP</li>
+                    <li>Trate erros de rede (timeout, conexão)</li>
+                    <li>Implemente retry logic com backoff exponencial</li>
+                    <li>Logue erros para debugging</li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
