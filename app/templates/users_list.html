@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Usuários - pyFlaskUserKit{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-people-fill"></i> Gerenciamento de Usuários</h2>
+            <a href="{{ url_for('web.user_create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Adicionar Usuário
+            </a>
+        </div>
+        
+        <!-- Users Table -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuário</th>
+                                <th>Email</th>
+                                <th>Grupos</th>
+                                <th>Status</th>
+                                <th>Admin</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td><strong>{{ user.username }}</strong></td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% for group in user.groups %}
+                                    <span class="badge bg-info me-1">{{ group.name }}</span>
+                                    {% endfor %}
+                                    {% if not user.groups %}
+                                    <span class="text-muted">Nenhum</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">Ativo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_admin %}
+                                    <span class="badge bg-primary">Admin</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Regular</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('web.user_detail', user_id=user.id) }}" 
+                                       class="btn btn-sm btn-outline-info" title="Detalhes">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('web.user_edit', user_id=user.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if not users %}
+                    <p class="text-center text-muted py-4">Nenhum usuário cadastrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

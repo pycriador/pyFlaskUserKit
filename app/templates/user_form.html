@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{% if user %}Editar Usuário{% else %}Novo Usuário{% endif %} - pyFlaskUserKit{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('web.index') }}">Início</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('web.users_list') }}">Usuários</a></li>
+                <li class="breadcrumb-item active">{% if user %}Editar{% else %}Novo{% endif %}</li>
+            </ol>
+        </nav>
+        
+        <h2 class="mb-4">
+            <i class="bi bi-person-{% if user %}pencil{% else %}plus{% endif %}"></i> 
+            {% if user %}Editar Usuário: {{ user.username }}{% else %}Novo Usuário{% endif %}
+        </h2>
+        
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Nome de Usuário *</label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ user.username if user else '' }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email if user else '' }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password" class="form-label">
+                                    Senha {% if user %}(deixe em branco para não alterar){% else %}*{% endif %}
+                                </label>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       {% if not user %}required{% endif %}>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Grupos</label>
+                                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    {% for group in groups %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               name="groups" value="{{ group.id }}" id="group{{ group.id }}"
+                                               {% if user and group in user.groups %}checked{% endif %}>
+                                        <label class="form-check-label" for="group{{ group.id }}">
+                                            {{ group.name }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_admin" 
+                                           id="is_admin" {% if user and user.is_admin %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_admin">
+                                        <i class="bi bi-shield-check"></i> Administrador
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_active" 
+                                           id="is_active" {% if not user or user.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        <i class="bi bi-check-circle"></i> Ativo
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{% if user %}{{ url_for('web.user_detail', user_id=user.id) }}{% else %}{{ url_for('web.users_list') }}{% endif %}" 
+                                   class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save"></i> {% if user %}Atualizar{% else %}Criar{% endif %} Usuário
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

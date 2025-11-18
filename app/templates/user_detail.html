@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Usuário #{{ user.id }} - pyFlaskUserKit{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('web.index') }}">Início</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('web.users_list') }}">Usuários</a></li>
+                <li class="breadcrumb-item active">{{ user.username }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-person-circle"></i> {{ user.username }}</h2>
+            <div>
+                <a href="{{ url_for('web.user_edit', user_id=user.id) }}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                {% if user.id != session.user_id %}
+                <form method="POST" action="{{ url_for('web.user_delete', user_id=user.id) }}" 
+                      style="display: inline;" 
+                      onsubmit="return confirm('Tem certeza que deseja deletar este usuário?');">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Deletar
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- User Info Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações do Usuário</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="30%">ID:</th>
+                                <td><code>{{ user.id }}</code></td>
+                            </tr>
+                            <tr>
+                                <th>Nome de usuário:</th>
+                                <td><strong>{{ user.username }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Email:</th>
+                                <td>{{ user.email }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">Ativo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Tipo:</th>
+                                <td>
+                                    {% if user.is_admin %}
+                                    <span class="badge bg-primary">Administrador</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Regular</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Criado em:</th>
+                                <td>{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Atualizado em:</th>
+                                <td>{{ user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else 'N/A' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Groups Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-collection"></i> Grupos</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if user.groups %}
+                        <ul class="list-group list-group-flush">
+                            {% for group in user.groups %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ group.name }}
+                                <a href="{{ url_for('web.group_detail', group_id=group.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    Ver Grupo
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted">Este usuário não está em nenhum grupo.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions Card -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="bi bi-tools"></i> Ações Rápidas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            <!-- Toggle Status -->
+                            <form method="POST" action="{{ url_for('web.user_toggle_status', user_id=user.id) }}">
+                                {% if user.is_active %}
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-toggle-off"></i> Inativar Usuário
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-toggle-on"></i> Ativar Usuário
+                                </button>
+                                {% endif %}
+                            </form>
+                            
+                            <!-- Toggle Admin -->
+                            <form method="POST" action="{{ url_for('web.user_toggle_admin', user_id=user.id) }}">
+                                {% if user.is_admin %}
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="bi bi-shield-fill-x"></i> Remover Admin
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-shield-fill-check"></i> Tornar Admin
+                                </button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

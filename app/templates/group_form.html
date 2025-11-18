@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{% if group %}Editar Grupo{% else %}Novo Grupo{% endif %} - pyFlaskUserKit{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('web.index') }}">Início</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('web.groups_list') }}">Grupos</a></li>
+                <li class="breadcrumb-item active">{% if group %}Editar{% else %}Novo{% endif %}</li>
+            </ol>
+        </nav>
+        
+        <h2 class="mb-4">
+            <i class="bi bi-{% if group %}pencil{% else %}plus{% endif %}-circle"></i> 
+            {% if group %}Editar Grupo: {{ group.name }}{% else %}Novo Grupo{% endif %}
+        </h2>
+        
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Nome do Grupo *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ group.name if group else '' }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="3">{{ group.description if group else '' }}</textarea>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{% if group %}{{ url_for('web.group_detail', group_id=group.id) }}{% else %}{{ url_for('web.groups_list') }}{% endif %}" 
+                                   class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-save"></i> {% if group %}Atualizar{% else %}Criar{% endif %} Grupo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
