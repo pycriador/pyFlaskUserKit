@@ -49,6 +49,16 @@
                                        class="btn btn-sm btn-outline-primary" title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            title="Deletar Grupo"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteGroupModal"
+                                            data-group-id="{{ group.id }}"
+                                            data-group-name="{{ group.name }}"
+                                            data-group-members="{{ group.users|length }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -63,6 +73,76 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Group Modal -->
+<div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-labelledby="deleteGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteGroupModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão do Grupo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Tem certeza que deseja deletar o grupo <strong id="deleteGroupName"></strong>?</p>
+                <div id="deleteGroupMembersWarning" class="alert alert-warning mt-3 mb-0" style="display: none;">
+                    <i class="bi bi-info-circle"></i> Este grupo possui <strong id="deleteGroupMembersCount"></strong> membro(s). 
+                    Os usuários não serão deletados, apenas desvinculados do grupo.
+                </div>
+                <div class="alert alert-danger mt-3 mb-0">
+                    <i class="bi bi-exclamation-octagon"></i> <strong>Atenção!</strong> Esta ação é irreversível e removerá permanentemente:
+                    <ul class="mb-0 mt-2">
+                        <li>O grupo e suas configurações</li>
+                        <li>Todas as associações com usuários</li>
+                        <li>O histórico do grupo</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="POST" id="deleteGroupForm" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Sim, Deletar Grupo
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Handle delete group modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteGroupModal = document.getElementById('deleteGroupModal');
+        if (deleteGroupModal) {
+            deleteGroupModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const groupId = button.getAttribute('data-group-id');
+                const groupName = button.getAttribute('data-group-name');
+                const groupMembers = button.getAttribute('data-group-members');
+                
+                // Update modal content
+                document.getElementById('deleteGroupName').textContent = groupName;
+                
+                // Show warning if group has members
+                const membersWarning = document.getElementById('deleteGroupMembersWarning');
+                const membersCount = document.getElementById('deleteGroupMembersCount');
+                if (parseInt(groupMembers) > 0) {
+                    membersCount.textContent = groupMembers;
+                    membersWarning.style.display = 'block';
+                } else {
+                    membersWarning.style.display = 'none';
+                }
+                
+                // Update form action
+                const form = document.getElementById('deleteGroupForm');
+                form.action = `/grupos/${groupId}/deletar`;
+            });
+        }
+    });
+</script>
+
 {% endblock %}
-
-

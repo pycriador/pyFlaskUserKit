@@ -274,10 +274,30 @@ def groups_list():
 @web_bp.route('/grupos/<int:group_id>')
 @login_required
 def group_detail(group_id):
-    """View group details"""
+    """View group details with pagination"""
     group = Group.query.get_or_404(group_id)
+    
+    # Pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 5, type=int)
+    
+    # Validate per_page (only allow 5, 10, 15, 20)
+    if per_page not in [5, 10, 15, 20]:
+        per_page = 5
+    
+    # Get all available users for admin
     all_users = User.query.order_by(User.username).all() if session.get('is_admin') else []
-    return render_template('group_detail.html', group=group, all_users=all_users)
+    
+    # Paginate group members
+    members_query = User.query.join(User.groups).filter(Group.id == group_id).order_by(User.username)
+    pagination = members_query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return render_template('group_detail.html', 
+                         group=group, 
+                         all_users=all_users,
+                         members=pagination.items,
+                         pagination=pagination,
+                         per_page=per_page)
 
 
 @web_bp.route('/grupos/novo', methods=['GET', 'POST'])
@@ -366,6 +386,49 @@ def group_add_user(group_id, user_id):
         flash(f'Usuário {user.username} adicionado ao grupo {group.name}!', 'success')
     else:
         flash(f'Usuário {user.username} já está no grupo {group.name}.', 'info')
+    
+    return redirect(url_for('web.group_detail', group_id=group_id))
+
+
+@web_bp.route('/grupos/<int:group_id>/adicionar-usuarios-multiplos', methods=['POST'])
+@admin_required
+def group_add_multiple_users(group_id):
+    """Add multiple users to group at once - Admin only"""
+    group = Group.query.get_or_404(group_id)
+    
+    # Get user IDs from form
+    user_ids_str = request.form.get('user_ids', '')
+    if not user_ids_str:
+        flash('Nenhum usuário selecionado.', 'warning')
+        return redirect(url_for('web.group_detail', group_id=group_id))
+    
+    # Parse user IDs
+    try:
+        user_ids = [int(uid.strip()) for uid in user_ids_str.split(',') if uid.strip()]
+    except ValueError:
+        flash('IDs de usuários inválidos.', 'danger')
+        return redirect(url_for('web.group_detail', group_id=group_id))
+    
+    # Add users to group
+    added_count = 0
+    already_in_group = 0
+    
+    for user_id in user_ids:
+        user = User.query.get(user_id)
+        if user:
+            if user not in group.users:
+                group.users.append(user)
+                added_count += 1
+            else:
+                already_in_group += 1
+    
+    db.session.commit()
+    
+    # Flash messages
+    if added_count > 0:
+        flash(f'{added_count} usuário(s) adicionado(s) ao grupo {group.name}!', 'success')
+    if already_in_group > 0:
+        flash(f'{already_in_group} usuário(s) já estava(m) no grupo.', 'info')
     
     return redirect(url_for('web.group_detail', group_id=group_id))
 

@@ -65,6 +65,26 @@
                                        class="btn btn-sm btn-outline-primary" title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    {% if not user.is_admin %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-success" 
+                                            title="Tornar Admin"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#makeAdminModal"
+                                            data-user-id="{{ user.id }}"
+                                            data-user-name="{{ user.username }}">
+                                        <i class="bi bi-shield-check"></i>
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            title="Deletar Usuário"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteUserModal"
+                                            data-user-id="{{ user.id }}"
+                                            data-user-name="{{ user.username }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -78,6 +98,114 @@
         </div>
     </div>
 </div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteUserModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Tem certeza que deseja deletar o usuário <strong id="deleteUserName"></strong>?</p>
+                <div class="alert alert-danger mt-3 mb-0">
+                    <i class="bi bi-exclamation-octagon"></i> <strong>Atenção!</strong> Esta ação é irreversível e removerá permanentemente:
+                    <ul class="mb-0 mt-2">
+                        <li>Todos os dados do usuário</li>
+                        <li>Suas associações com grupos</li>
+                        <li>Seu histórico de acesso</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="POST" id="deleteUserForm" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Sim, Deletar Permanentemente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Make Admin Modal -->
+<div class="modal fade" id="makeAdminModal" tabindex="-1" aria-labelledby="makeAdminModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="makeAdminModalLabel">
+                    <i class="bi bi-shield-check"></i> Confirmar Permissão Admin
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Tem certeza que deseja tornar <strong id="makeAdminUserName"></strong> um administrador?</p>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="bi bi-info-circle"></i> <strong>Permissões de Administrador:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Criar, editar e deletar usuários</li>
+                        <li>Gerenciar grupos e membros</li>
+                        <li>Acesso completo à API</li>
+                        <li>Visualizar dados de todos os usuários</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="POST" id="makeAdminForm" style="display: inline;">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-shield-check"></i> Sim, Tornar Admin
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Handle delete user modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteUserModal = document.getElementById('deleteUserModal');
+        if (deleteUserModal) {
+            deleteUserModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const userId = button.getAttribute('data-user-id');
+                const userName = button.getAttribute('data-user-name');
+                
+                // Update modal content
+                document.getElementById('deleteUserName').textContent = userName;
+                
+                // Update form action
+                const form = document.getElementById('deleteUserForm');
+                form.action = `/usuarios/${userId}/deletar`;
+            });
+        }
+        
+        // Handle make admin modal
+        const makeAdminModal = document.getElementById('makeAdminModal');
+        if (makeAdminModal) {
+            makeAdminModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const userId = button.getAttribute('data-user-id');
+                const userName = button.getAttribute('data-user-name');
+                
+                // Update modal content
+                document.getElementById('makeAdminUserName').textContent = userName;
+                
+                // Update form action
+                const form = document.getElementById('makeAdminForm');
+                form.action = `/usuarios/${userId}/alternar-admin`;
+            });
+        }
+    });
+</script>
+
 {% endblock %}
-
-

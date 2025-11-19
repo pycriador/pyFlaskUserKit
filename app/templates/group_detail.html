@@ -20,13 +20,15 @@
                 <a href="{{ url_for('web.group_edit', group_id=group.id) }}" class="btn btn-primary">
                     <i class="bi bi-pencil"></i> Editar
                 </a>
-                <form method="POST" action="{{ url_for('web.group_delete', group_id=group.id) }}" 
-                      style="display: inline;" 
-                      onsubmit="return confirm('Tem certeza que deseja deletar este grupo?');">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash"></i> Deletar
-                    </button>
-                </form>
+                <button type="button" 
+                        class="btn btn-danger"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deleteGroupDetailModal"
+                        data-group-id="{{ group.id }}"
+                        data-group-name="{{ group.name }}"
+                        data-group-members="{{ group.users|length }}">
+                    <i class="bi bi-trash"></i> Deletar
+                </button>
             </div>
             {% endif %}
         </div>
@@ -72,13 +74,35 @@
             <!-- Members Card -->
             <div class="col-md-6 mb-4">
                 <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-people"></i> Membros do Grupo</h5>
+                        <span class="badge bg-light text-dark">{{ pagination.total }} membro(s)</span>
                     </div>
                     <div class="card-body">
-                        {% if group.users %}
+                        <!-- Per Page Selector -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <label for="perPageSelect" class="form-label mb-0 small">Mostrar:</label>
+                                <select id="perPageSelect" class="form-select form-select-sm d-inline-block w-auto ms-2" 
+                                        onchange="window.location.href='{{ url_for('web.group_detail', group_id=group.id) }}?per_page=' + this.value">
+                                    <option value="5" {% if per_page == 5 %}selected{% endif %}>5</option>
+                                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                    <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+                                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                                </select>
+                                <span class="small ms-2">por página</span>
+                            </div>
+                            {% if pagination.total > 0 %}
+                            <div class="small text-muted">
+                                Mostrando {{ ((pagination.page - 1) * pagination.per_page) + 1 }} - 
+                                {% if pagination.page * pagination.per_page > pagination.total %}{{ pagination.total }}{% else %}{{ pagination.page * pagination.per_page }}{% endif %} de {{ pagination.total }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if members %}
                         <ul class="list-group list-group-flush">
-                            {% for user in group.users %}
+                            {% for user in members %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
                                     <strong>{{ user.username }}</strong>
@@ -95,14 +119,14 @@
                                        class="btn btn-sm btn-outline-info me-1">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <form method="POST" 
-                                          action="{{ url_for('web.group_remove_user', group_id=group.id, user_id=user.id) }}"
-                                          style="display: inline;"
-                                          onsubmit="return confirm('Remover {{ user.username }} do grupo?');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="bi bi-person-dash"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#removeUserModal"
+                                            data-user-id="{{ user.id }}"
+                                            data-user-name="{{ user.username }}"
+                                            data-group-id="{{ group.id }}">
+                                        <i class="bi bi-person-dash"></i>
+                                    </button>
                                     {% else %}
                                     <span class="text-muted">{{ user.email }}</span>
                                     {% endif %}
@@ -110,8 +134,49 @@
                             </li>
                             {% endfor %}
                         </ul>
+                        
+                        <!-- Pagination Controls -->
+                        {% if pagination.pages > 1 %}
+                        <nav aria-label="Navegação de membros" class="mt-3">
+                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                <!-- Previous Button -->
+                                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                                    <a class="page-link" 
+                                       href="{% if pagination.has_prev %}{{ url_for('web.group_detail', group_id=group.id, page=pagination.prev_num, per_page=per_page) }}{% else %}#{% endif %}"
+                                       tabindex="{% if not pagination.has_prev %}-1{% endif %}">
+                                        <i class="bi bi-chevron-left"></i> Anterior
+                                    </a>
+                                </li>
+                                
+                                <!-- Page Numbers -->
+                                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                    {% if page_num %}
+                                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                            <a class="page-link" href="{{ url_for('web.group_detail', group_id=group.id, page=page_num, per_page=per_page) }}">
+                                                {{ page_num }}
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                <!-- Next Button -->
+                                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                                    <a class="page-link" 
+                                       href="{% if pagination.has_next %}{{ url_for('web.group_detail', group_id=group.id, page=pagination.next_num, per_page=per_page) }}{% else %}#{% endif %}"
+                                       tabindex="{% if not pagination.has_next %}-1{% endif %}">
+                                        Próximo <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                        {% endif %}
+                        
                         {% else %}
-                        <p class="text-muted">Este grupo não possui membros.</p>
+                        <p class="text-muted text-center">Este grupo não possui membros.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -123,30 +188,62 @@
         <div class="row">
             <div class="col-12">
                 <div class="card shadow-sm">
-                    <div class="card-header bg-success text-white">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-person-plus"></i> Adicionar Usuário ao Grupo</h5>
+                        <span class="badge bg-light text-dark" id="availableUsersCount">0 disponível(eis)</span>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="{{ url_for('web.group_add_user', group_id=group.id, user_id=0) }}" 
-                              onsubmit="this.action = this.action.replace('/0', '/' + document.getElementById('user_select').value); return document.getElementById('user_select').value != '';">
-                            <div class="row">
-                                <div class="col-md-10">
-                                    <select class="form-select" id="user_select" name="user_id" required>
-                                        <option value="">Selecione um usuário...</option>
-                                        {% for user in all_users %}
-                                        {% if user not in group.users %}
-                                        <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
-                                        {% endif %}
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-success w-100">
-                                        <i class="bi bi-plus-circle"></i> Adicionar
-                                    </button>
-                                </div>
+                        <!-- Search Box -->
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="userSearchInput" 
+                                       placeholder="Pesquisar por nome ou email..."
+                                       autocomplete="off">
+                                <button type="button" 
+                                        class="btn btn-outline-secondary" 
+                                        id="clearSearchBtn"
+                                        title="Limpar pesquisa">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
                             </div>
-                        </form>
+                            <small class="text-muted">Digite para filtrar usuários que não estão no grupo</small>
+                        </div>
+                        
+                        <!-- Add All Button -->
+                        <div class="mb-3" id="addAllSection" style="display: none;">
+                            <button type="button" 
+                                    class="btn btn-success w-100" 
+                                    id="addAllUsersBtn"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#addAllUsersModal">
+                                <i class="bi bi-people-fill"></i> Adicionar Todos os Usuários Encontrados (<span id="addAllCount">0</span>)
+                            </button>
+                        </div>
+                        
+                        <!-- Search Results -->
+                        <div id="searchResults">
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> Use a caixa de pesquisa acima para encontrar usuários.
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden data for JavaScript -->
+                        <div id="availableUsersData" style="display: none;">
+                            {% for user in all_users %}
+                            {% if user not in group.users %}
+                            <div class="user-data" 
+                                 data-user-id="{{ user.id }}"
+                                 data-username="{{ user.username }}"
+                                 data-email="{{ user.email }}"
+                                 data-is-admin="{{ user.is_admin }}"
+                                 data-is-active="{{ user.is_active }}">
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -154,6 +251,287 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Remove User Modal -->
+<div class="modal fade" id="removeUserModal" tabindex="-1" aria-labelledby="removeUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="removeUserModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Remoção
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Tem certeza que deseja remover o usuário <strong id="removeUserName"></strong> do grupo <strong>{{ group.name }}</strong>?</p>
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="bi bi-info-circle"></i> Esta ação pode ser revertida adicionando o usuário novamente ao grupo.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="POST" id="removeUserForm" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-person-dash"></i> Sim, Remover
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add All Users Modal -->
+<div class="modal fade" id="addAllUsersModal" tabindex="-1" aria-labelledby="addAllUsersModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addAllUsersModalLabel">
+                    <i class="bi bi-people-fill"></i> Confirmar Adição em Massa
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Tem certeza que deseja adicionar <strong id="addAllUsersCount">0</strong> usuário(s) ao grupo <strong>{{ group.name }}</strong>?</p>
+                <div class="alert alert-info mt-3 mb-2">
+                    <i class="bi bi-info-circle"></i> <strong>Usuários que serão adicionados:</strong>
+                    <ul id="addAllUsersList" class="mb-0 mt-2">
+                        <!-- Populated by JavaScript -->
+                    </ul>
+                </div>
+                <div class="alert alert-success mt-3 mb-0">
+                    <i class="bi bi-check-circle"></i> Esta ação adicionará todos os usuários encontrados na pesquisa ao grupo de uma só vez.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="POST" id="addAllUsersForm" style="display: inline;">
+                    <input type="hidden" name="user_ids" id="addAllUsersInput">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-people-fill"></i> Sim, Adicionar Todos
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Group Detail Modal -->
+<div class="modal fade" id="deleteGroupDetailModal" tabindex="-1" aria-labelledby="deleteGroupDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteGroupDetailModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão do Grupo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Tem certeza que deseja deletar o grupo <strong id="deleteGroupDetailName"></strong>?</p>
+                <div id="deleteGroupDetailMembersWarning" class="alert alert-warning mt-3 mb-0" style="display: none;">
+                    <i class="bi bi-info-circle"></i> Este grupo possui <strong id="deleteGroupDetailMembersCount"></strong> membro(s). 
+                    Os usuários não serão deletados, apenas desvinculados do grupo.
+                </div>
+                <div class="alert alert-danger mt-3 mb-0">
+                    <i class="bi bi-exclamation-octagon"></i> <strong>Atenção!</strong> Esta ação é irreversível e removerá permanentemente:
+                    <ul class="mb-0 mt-2">
+                        <li>O grupo e suas configurações</li>
+                        <li>Todas as associações com usuários</li>
+                        <li>O histórico do grupo</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="POST" id="deleteGroupDetailForm" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Sim, Deletar Grupo
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Handle remove user modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const removeUserModal = document.getElementById('removeUserModal');
+        if (removeUserModal) {
+            removeUserModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const userId = button.getAttribute('data-user-id');
+                const userName = button.getAttribute('data-user-name');
+                const groupId = button.getAttribute('data-group-id');
+                
+                // Update modal content
+                document.getElementById('removeUserName').textContent = userName;
+                
+                // Update form action
+                const form = document.getElementById('removeUserForm');
+                form.action = `/grupos/${groupId}/remover-usuario/${userId}`;
+            });
+        }
+        
+        // Handle delete group detail modal
+        const deleteGroupDetailModal = document.getElementById('deleteGroupDetailModal');
+        if (deleteGroupDetailModal) {
+            deleteGroupDetailModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const groupId = button.getAttribute('data-group-id');
+                const groupName = button.getAttribute('data-group-name');
+                const groupMembers = button.getAttribute('data-group-members');
+                
+                // Update modal content
+                document.getElementById('deleteGroupDetailName').textContent = groupName;
+                
+                // Show warning if group has members
+                const membersWarning = document.getElementById('deleteGroupDetailMembersWarning');
+                const membersCount = document.getElementById('deleteGroupDetailMembersCount');
+                if (parseInt(groupMembers) > 0) {
+                    membersCount.textContent = groupMembers;
+                    membersWarning.style.display = 'block';
+                } else {
+                    membersWarning.style.display = 'none';
+                }
+                
+                // Update form action
+                const form = document.getElementById('deleteGroupDetailForm');
+                form.action = `/grupos/${groupId}/deletar`;
+            });
+        }
+        
+        // ============= USER SEARCH FUNCTIONALITY =============
+        const userSearchInput = document.getElementById('userSearchInput');
+        const searchResults = document.getElementById('searchResults');
+        const addAllSection = document.getElementById('addAllSection');
+        const addAllCount = document.getElementById('addAllCount');
+        const availableUsersCount = document.getElementById('availableUsersCount');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const addAllUsersModal = document.getElementById('addAllUsersModal');
+        
+        if (userSearchInput) {
+            // Get all available users from hidden data
+            const availableUsersData = document.querySelectorAll('#availableUsersData .user-data');
+            const availableUsers = [];
+            
+            availableUsersData.forEach(function(userData) {
+                availableUsers.push({
+                    id: userData.getAttribute('data-user-id'),
+                    username: userData.getAttribute('data-username'),
+                    email: userData.getAttribute('data-email'),
+                    isAdmin: userData.getAttribute('data-is-admin') === 'True',
+                    isActive: userData.getAttribute('data-is-active') === 'True'
+                });
+            });
+            
+            // Update available users count
+            availableUsersCount.textContent = availableUsers.length + ' disponível(eis)';
+            
+            let currentFilteredUsers = [];
+            
+            // Search function
+            function performSearch() {
+                const searchTerm = userSearchInput.value.toLowerCase().trim();
+                
+                if (searchTerm === '') {
+                    searchResults.innerHTML = '<div class="alert alert-info mb-0"><i class="bi bi-info-circle"></i> Use a caixa de pesquisa acima para encontrar usuários.</div>';
+                    addAllSection.style.display = 'none';
+                    currentFilteredUsers = [];
+                    return;
+                }
+                
+                // Filter users
+                currentFilteredUsers = availableUsers.filter(function(user) {
+                    return user.username.toLowerCase().includes(searchTerm) || 
+                           user.email.toLowerCase().includes(searchTerm);
+                });
+                
+                // Display results
+                if (currentFilteredUsers.length === 0) {
+                    searchResults.innerHTML = '<div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle"></i> Nenhum usuário encontrado com essa pesquisa.</div>';
+                    addAllSection.style.display = 'none';
+                } else {
+                    let html = '<div class="list-group">';
+                    
+                    currentFilteredUsers.forEach(function(user) {
+                        html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+                        html += '<div>';
+                        html += '<strong>' + user.username + '</strong> <span class="text-muted">(' + user.email + ')</span>';
+                        if (user.isAdmin) {
+                            html += ' <span class="badge bg-primary ms-1">Admin</span>';
+                        }
+                        if (!user.isActive) {
+                            html += ' <span class="badge bg-danger ms-1">Inativo</span>';
+                        }
+                        html += '</div>';
+                        html += '<form method="POST" action="/grupos/{{ group.id }}/adicionar-usuario/' + user.id + '" style="display: inline;">';
+                        html += '<button type="submit" class="btn btn-sm btn-success">';
+                        html += '<i class="bi bi-plus-circle"></i> Adicionar';
+                        html += '</button>';
+                        html += '</form>';
+                        html += '</div>';
+                    });
+                    
+                    html += '</div>';
+                    searchResults.innerHTML = html;
+                    
+                    // Show "Add All" button if more than 1 user found
+                    if (currentFilteredUsers.length > 1) {
+                        addAllSection.style.display = 'block';
+                        addAllCount.textContent = currentFilteredUsers.length;
+                    } else {
+                        addAllSection.style.display = 'none';
+                    }
+                }
+            }
+            
+            // Event listeners
+            userSearchInput.addEventListener('input', performSearch);
+            
+            clearSearchBtn.addEventListener('click', function() {
+                userSearchInput.value = '';
+                performSearch();
+            });
+            
+            // Handle add all users modal
+            if (addAllUsersModal) {
+                addAllUsersModal.addEventListener('show.bs.modal', function(event) {
+                    const modalUsersCount = document.getElementById('addAllUsersCount');
+                    const modalUsersList = document.getElementById('addAllUsersList');
+                    const addAllUsersInput = document.getElementById('addAllUsersInput');
+                    const addAllUsersForm = document.getElementById('addAllUsersForm');
+                    
+                    // Update count
+                    modalUsersCount.textContent = currentFilteredUsers.length;
+                    
+                    // Update list
+                    let listHtml = '';
+                    const userIds = [];
+                    currentFilteredUsers.forEach(function(user) {
+                        listHtml += '<li><strong>' + user.username + '</strong> (' + user.email + ')';
+                        if (user.isAdmin) {
+                            listHtml += ' <span class="badge bg-primary">Admin</span>';
+                        }
+                        listHtml += '</li>';
+                        userIds.push(user.id);
+                    });
+                    modalUsersList.innerHTML = listHtml;
+                    
+                    // Update form
+                    addAllUsersInput.value = userIds.join(',');
+                    addAllUsersForm.action = '/grupos/{{ group.id }}/adicionar-usuarios-multiplos';
+                });
+            }
+        }
+    });
+</script>
+
 {% endblock %}
 
 
